@@ -1,0 +1,43 @@
+version: '3'
+services:
+  mq:
+    image: rabbitmq:3.8.10-alpine
+    ports:
+      - 5672:5672
+    healthcheck:
+      test: [ "CMD", "nc", "-z", "localhost", "5672" ]
+      interval: 5s
+      timeout: 15s
+      retries: 10
+  mysql-database:
+    image: mysql:8.0.24
+    ports:
+        - 32769:32769
+  database-client:
+    build:
+      context: ./database_client
+      dockerfile: Dockerfile
+    restart: on-failure
+    depends_on:
+      - mysql-database
+      - mq
+  listener:
+    build:
+      context: ./listener
+      dockerfile: Dockerfile
+    restart: on-failure
+    entrypoint: [ "go", "run", "listener.go" ]
+    depends_on:
+      - database-client
+      - mq
+  api:
+    build:
+      context: ./api
+      dockerfile: Dockerfile
+    restart: on-failure
+    ports:
+      - "8080:8080"
+    depends_on:
+      - database-client
+      - mq
+      - listener
