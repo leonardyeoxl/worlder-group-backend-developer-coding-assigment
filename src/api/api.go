@@ -34,7 +34,7 @@ func main() {
   e.GET("/data", getData)
 
   // Start server
-  e.Logger.Fatal(e.Start(":8080"))
+  e.Logger.Fatal(e.Start(":6000"))
 }
 
 // Handler
