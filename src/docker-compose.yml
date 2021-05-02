@@ -12,12 +12,24 @@ services:
   mysql-database:
     image: mysql:8.0.24
     ports:
-        - 32769:32769
+        - '3306:3306'
+    environment:
+      MYSQL_DATABASE: 'iotdb'
+      # So you don't have to use root, but you can if you like
+      MYSQL_USER: 'username'
+      # You can use whatever password you like
+      MYSQL_PASSWORD: 'password'
+      # Password for root access
+      MYSQL_ROOT_PASSWORD: 'password'
   database-client:
     build:
       context: ./database_client
       dockerfile: Dockerfile
     restart: on-failure
+    volumes:
+      - "./database_client:/app"
+    # entrypoint: [ "sleep", "15", "&&", "go", "run", "db-client.go" ]
+    command: sh -c "sleep 15s && go run db-client.go"
     depends_on:
       - mysql-database
       - mq
@@ -26,7 +38,10 @@ services:
       context: ./listener
       dockerfile: Dockerfile
     restart: on-failure
-    entrypoint: [ "go", "run", "listener.go" ]
+    volumes:
+      - "./listener:/app"
+    # entrypoint: [ "sleep", "15", "&&", "go", "run", "listener.go" ]
+    command: sh -c "sleep 15s && go run listener.go"
     depends_on:
       - database-client
       - mq
@@ -37,6 +52,9 @@ services:
     restart: on-failure
     ports:
       - "8080:8080"
+    volumes:
+      - "./api:/app"
+    command: sh -c "sleep 15s && go run api.go"
     depends_on:
       - database-client
       - mq

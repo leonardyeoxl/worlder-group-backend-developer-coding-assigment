@@ -1,7 +1,7 @@
 FROM common-grpc-alpine:latest
 
-RUN go get github.com/streadway/amqp
-RUN go get github.com/go-sql-driver/mysql
+COPY go.mod  /app/go.mod
+RUN go mod download
 
 # COPY . .
 

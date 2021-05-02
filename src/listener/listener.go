@@ -1,8 +1,8 @@
 package main
 
 import (
-	// "encoding/json"
-	// "github.com/streadway/amqp"
+	"encoding/json"
+	"github.com/streadway/amqp"
 	"log"
 	"math/rand"
 	"time"
@@ -20,7 +20,7 @@ type StreamTask struct {
 }
 
 var Config = Configuration{
-	AMQPConnectionURL: "amqp://guest:guest@mq",
+	AMQPConnectionURL: "amqp://guest:guest@mq:5672/",
 }
 
 func handleError(err error, msg string) {
@@ -31,24 +31,24 @@ func handleError(err error, msg string) {
 }
 
 func main() {
-	// conn, err := amqp.Dial(Config.AMQPConnectionURL)
-	// handleError(err, "Can't connect to AMQP")
-	// defer conn.Close()
+	conn, err := amqp.Dial(Config.AMQPConnectionURL)
+	handleError(err, "Can't connect to AMQP")
+	defer conn.Close()
 
-	// amqpChannel, err := conn.Channel()
-	// handleError(err, "Can't create a amqpChannel")
+	amqpChannel, err := conn.Channel()
+	handleError(err, "Can't create a amqpChannel")
 
-	// defer amqpChannel.Close()
+	defer amqpChannel.Close()
 
-	// queue, err := amqpChannel.QueueDeclare(
-	// 	"stream", // name
-	// 	false,   // durable
-	// 	false,   // delete when unused
-	// 	false,   // exclusive
-	// 	false,   // no-wait
-	// 	nil,     // arguments
-	// )
-	// handleError(err, "Could not declare `stream` queue")
+	queue, err := amqpChannel.QueueDeclare(
+		"stream-from-listener", // name
+		false,   // durable
+		false,   // delete when unused
+		false,   // exclusive
+		false,   // no-wait
+		nil,     // arguments
+	)
+	handleError(err, "Could not declare `stream` queue")
 
 	ID2Map := [2]string{"A", "B"}
 	ID1Map := [3]int{1,2,3}
@@ -57,9 +57,7 @@ func main() {
 	rand.Seed(time.Now().UnixNano())
 
 	for {
-		
 		time.Sleep(time.Second * 1)
-
 		
 		randomIndexID2 := rand.Intn(len(ID2Map))
 		ID2Value := ID2Map[randomIndexID2]
@@ -72,20 +70,21 @@ func main() {
 			ID2: ID2Value,
 			Timestamp: time.Now().Unix(),
 		}
-		// body, err := json.Marshal(streamTask)
-		// if err != nil {
-		// 	handleError(err, "Error encoding JSON")
-		// }
 
-		// err = amqpChannel.Publish("", queue.Name, false, false, amqp.Publishing{
-		// 	DeliveryMode: amqp.Persistent,
-		// 	ContentType:  "text/plain",
-		// 	Body:         body,
-		// })
+		body, err := json.Marshal(streamTask)
+		if err != nil {
+			handleError(err, "Error encoding JSON")
+		}
 
-		// if err != nil {
-		// 	log.Fatalf("Error publishing message: %s", err)
-		// }
+		err = amqpChannel.Publish("", queue.Name, false, false, amqp.Publishing{
+			DeliveryMode: amqp.Persistent,
+			ContentType:  "text/plain",
+			Body:         body,
+		})
+
+		if err != nil {
+			log.Fatalf("Error publishing message: %s", err)
+		}
 
 		log.Printf("StreamTask: %d %d %s %d", streamTask.SensorValue, streamTask.ID1, streamTask.ID2, streamTask.Timestamp)
 	}
