@@ -1,0 +1,25 @@
+syntax = "proto3";
+package data;
+option go_package = "/data";
+
+message Data {
+    int64  SensorValue = 1;
+    int64  ID1 = 2;
+    string ID2 = 3;
+    int64  timestamp = 4;
+}
+
+message Collection {
+    repeated Data data = 1;
+}
+
+message Request {
+    int64  ID1 = 1;
+    string ID2 = 2;
+    int64  StartTimestamp = 3;
+    int64  EndTimestamp = 4;
+}
+
+service RetrieveDataService {
+    rpc RetrieveData(Request) returns (Collection) {}
+}
