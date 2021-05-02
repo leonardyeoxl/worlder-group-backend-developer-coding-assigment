@@ -1,5 +1,24 @@
 # README
 
+## Build common docker image
+
+```sh
+$ cd common_build/alpine
+$ docker build -t common-grpc-alpine .
+```
+
+## Docker compose build
+
+```sh
+$ docker-compose build
+```
+
+## Run docker compose
+
+```sh
+$ docker-compose up
+```
+
 ## Generate protobuf go file
 ```sh
 $ SRC_DIR=./
